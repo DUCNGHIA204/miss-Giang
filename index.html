@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Heart</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            padding: 0; margin: 0;
+            background: #000;
+            overflow: hidden;
+            perspective: 1000px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            touch-action: pan-x pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas {
+            position: absolute;
+            width: 100%; height: 100%;
+            z-index: 1;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        #flying-container {
+            position: absolute;
+            width: 100%; height: 100%;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 2;
+            transform-style: preserve-3d;
+        }
+
+        .flying-img {
+            position: absolute;
+            width: clamp(20px, 5vw, 35px);
+            height: clamp(20px, 5vw, 35px);
+            opacity: 0;
+            pointer-events: auto;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            animation: fly3D 4s linear infinite;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        @keyframes fly3D {
+            0% { opacity: 0; transform: translateZ(-200px) scale(0.3) rotate(0deg); }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateZ(300px) scale(1.5) rotate(360deg); }
+        }
+
+        #image-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+
+        #image-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        #modal-image {
+            max-width: 88%;
+            max-height: 65vh;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(255,105,180,0.5);
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+
+        #modal-caption {
+            color: #fff;
+            font-size: clamp(1rem, 3.5vw, 1.4rem);
+            text-align: center;
+            max-width: 88%;
+            margin-top: 10px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+            padding: 0 10px;
+        }
+
+        #modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            color: #fff;
+            font-size: clamp(1.8rem, 6vw, 2.5rem);
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255,255,255,0.25);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #modal-close:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.9);
+        }
+
+        #star-hearts-container {
+            position: absolute;
+            width: 100%; height: 100%;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star-heart {
+            position: absolute;
+            font-size: clamp(10px, 3vw, 16px);
+            opacity: 0.7;
+            pointer-events: none;
+            animation: twinkle 3s infinite ease-in-out, float 12s infinite linear, rainbow 2s linear infinite;
+            transform-origin: center;
+            user-select: none;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; transform: scale(1) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1.4) rotate(10deg); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            100% { transform: translateY(-25px) translateX(15px); }
+        }
+
+        @keyframes rainbow {
+            0%   { color: #ff0000; }
+            16%  { color: #ff8000; }
+            33%  { color: #ffff00; }
+            50%  { color: #00ff00; }
+            66%  { color: #0080ff; }
+            83%  { color: #8000ff; }
+            100% { color: #ff0000; }
+        }
+
+        @media (max-width: 768px) {
+            .flying-img { width: 25px; height: 25px; }
+            #modal-image { max-height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="pinkboard"></canvas>
+    <div id="flying-container"></div>
+    <div id="star-hearts-container"></div>
+
+    <div id="image-modal">
+        <div id="modal-close">X</div>
+        <img id="modal-image" src="" alt="">
+        <div id="modal-caption"></div>
+    </div>
+
+    <script>
+        // === PHÁT HIỆN THIẾT BỊ ===
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
+        const particleCount = isMobile ? 280 : 500;
+        const starCount = isMobile ? 100 : 180;
+        const createInterval = isMobile ? 500 : 300;
+
+        // === TRÁI TIM HỒNG LỚN ===
+        const settings = { particles: { length: particleCount, duration: 2, velocity: 100, effect: -0.75, size: 30 } };
+
+        (function() {
+            const vendors = ['ms', 'moz', 'webkit', 'o'];
+            for (let i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
+                window.requestAnimationFrame = window[vendors[i] + 'RequestAnimationFrame'];
+                window.cancelAnimationFrame = window[vendors[i] + 'CancelAnimationFrame'] || window[vendors[i] + 'CancelRequestAnimationFrame'];
+            }
+            if (!window.requestAnimationFrame) {
+                let lastTime = 0;
+                window.requestAnimationFrame = callback => {
+                    const currTime = Date.now();
+                    const timeToCall = Math.max(0, 16 - (currTime - lastTime));
+                    const id = setTimeout(() => callback(currTime + timeToCall), timeToCall);
+                    lastTime = currTime + timeToCall;
+                    return id;
+                };
+                window.cancelAnimationFrame = clearTimeout;
+            }
+        })();
+
+        class Point {
+            constructor(x = 0, y = 0) { this.x = x; this.y = y; }
+            clone() { return new Point(this.x, this.y); }
+            length(len) {
+                if (len === undefined) return Math.hypot(this.x, this.y);
+                this.normalize(); this.x *= len; this.y *= len; return this;
+            }
+            normalize() {
+                const len = this.length(); this.x /= len; this.y /= len; return this;
+            }
+        }
+
+        class Particle {
+            constructor() { this.position = new Point(); this.velocity = new Point(); this.acceleration = new Point(); this.age = 0; }
+            initialize(x, y, dx, dy) {
+                this.position.x = x; this.position.y = y; this.velocity.x = dx; this.velocity.y = dy;
+                this.acceleration.x = dx * settings.particles.effect; this.acceleration.y = dy * settings.particles.effect; this.age = 0;
+            }
+            update(dt) {
+                this.position.x += this.velocity.x * dt; this.position.y += this.velocity.y * dt;
+                this.velocity.x += this.acceleration.x * dt; this.velocity.y += this.acceleration.y * dt;
+                this.age += dt;
+            }
+            draw(ctx, img) {
+                const ease = t => (--t) * t * t + 1;
+                const size = img.width * ease(this.age / settings.particles.duration);
+                ctx.globalAlpha = 1 - this.age / settings.particles.duration;
+                ctx.drawImage(img, this.position.x - size/2, this.position.y - size/2, size, size);
+            }
+        }
+
+        class ParticlePool {
+            constructor(length) {
+                this.particles = Array.from({ length }, () => new Particle());
+                this.firstActive = 0; this.firstFree = 0; this.duration = settings.particles.duration;
+            }
+            add(x, y, dx, dy) {
+                this.particles[this.firstFree].initialize(x, y, dx, dy);
+                this.firstFree = (this.firstFree + 1) % this.particles.length;
+                if (this.firstActive === this.firstFree) this.firstActive = (this.firstActive + 1) % this.particles.length;
+            }
+            update(dt) {
+                let i = this.firstActive;
+                while (i !== this.firstFree) {
+                    this.particles[i].update(dt);
+                    if (this.particles[i].age >= this.duration) {
+                        this.firstActive = (this.firstActive + 1) % this.particles.length;
+                    }
+                    i = (i + 1) % this.particles.length;
+                }
+            }
+            draw(ctx, img) {
+                let i = this.firstActive;
+                while (i !== this.firstFree) {
+                    this.particles[i].draw(ctx, img);
+                    i = (i + 1) % this.particles.length;
+                }
+            }
+        }
+
+        (function(canvas) {
+            const ctx = canvas.getContext('2d');
+            const pool = new ParticlePool(settings.particles.length);
+            const rate = settings.particles.length / settings.particles.duration;
+            let time;
+
+            const pointOnHeart = t => new Point(
+                160 * Math.pow(Math.sin(t), 3),
+                130 * Math.cos(t) - 50 * Math.cos(2*t) - 20 * Math.cos(3*t) - 10 * Math.cos(4*t) + 25
+            );
+
+            const img = (function() {
+                const c = document.createElement('canvas');
+                const ctx = c.getContext('2d');
+                c.width = c.height = settings.particles.size;
+                const to = t => {
+                    const p = pointOnHeart(t);
+                    p.x = settings.particles.size/2 + p.x * settings.particles.size/350;
+                    p.y = settings.particles.size/2 - p.y * settings.particles.size/350;
+                    return p;
+                };
+                ctx.beginPath();
+                let t = -Math.PI, p = to(t); ctx.moveTo(p.x, p.y);
+                while (t < Math.PI) { t += 0.01; p = to(t); ctx.lineTo(p.x, p.y); }
+                ctx.closePath(); ctx.fillStyle = '#ea80b0'; ctx.fill();
+                const img = new Image(); img.src = c.toDataURL(); return img;
+            })();
+
+            const render = () => {
+                requestAnimationFrame(render);
+                const now = performance.now() / 1000;
+                const dt = now - (time || now); time = now;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const amount = rate * dt;
+                for (let i = 0; i < amount; i++) {
+                    const pos = pointOnHeart(Math.PI - 2*Math.PI*Math.random());
+                    const dir = pos.clone().length(settings.particles.velocity);
+                    pool.add(canvas.width/2 + pos.x, canvas.height/2 - pos.y, dir.x, -dir.y);
+                }
+                pool.update(dt); pool.draw(ctx, img);
+            };
+
+            const resize = () => { canvas.width = innerWidth; canvas.height = innerHeight; };
+            window.addEventListener('resize', resize);
+            resize(); render();
+        })(document.getElementById('pinkboard'));
+
+        // === ẢNH BAY 3D ===
+        const flyingImages = ['./image/1.jpg','./image/2.jpg','./image/3.jpg','./image/4.jpg','./image/5.jpg','./image/6.jpg','./image/7.jpg','./image/8.jpg'];
+        const captions = ["Trái tim nhỏ xinh","Ngôi sao lấp lánh","Bông hoa tình yêu","Cánh bướm bay","Ký ức đẹp","Tình yêu mãi","Hạnh phúc","Bên nhau"];
+        const flyingContainer = document.getElementById('flying-container');
+        let centerX = innerWidth / 2, centerY = innerHeight / 2;
+        const orbitRadius = Math.min(innerWidth, innerHeight) * 0.35;
+
+        function createFlyingImage() {
+            const img = document.createElement('img');
+            const idx = Math.floor(Math.random() * flyingImages.length);
+            img.src = flyingImages[idx];
+            img.className = 'flying-img';
+            img.dataset.caption = captions[idx % captions.length];
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = orbitRadius + (Math.random() - 0.5) * 80;
+            const x = centerX + Math.cos(angle) * distance - 15;
+            const y = centerY + Math.sin(angle) * distance - 15;
+
+            img.style.left = x + 'px';
+            img.style.top = y + 'px';
+            img.style.animationDuration = (3 + Math.random() * 2) + 's';
+            img.style.animationDelay = Math.random() * 2 + 's';
+
+            const open = e => { e.stopPropagation(); e.preventDefault(); openModal(img.src, img.dataset.caption); };
+            img.addEventListener('click', open);
+            img.addEventListener('touchstart', open);
+
+            flyingContainer.appendChild(img);
+            setTimeout(() => img.remove(), 6000);
+        }
+
+        // === MODAL ===
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-image');
+        const modalCaption = document.getElementById('modal-caption');
+        const closeBtn = document.getElementById('modal-close');
+
+        function openModal(src, caption) {
+            modalImg.src = src;
+            modalCaption.textContent = caption || "Yêu thương...";
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+            setTimeout(() => document.body.style.overflow = '', 400);
+        });
+
+        modal.addEventListener('click', e => { if (e.target === modal) closeBtn.click(); });
+
+        setInterval(createFlyingImage, createInterval);
+        window.addEventListener('resize', () => {
+            centerX = innerWidth / 2;
+            centerY = innerHeight / 2;
+        });
+        for (let i = 0; i < 5; i++) setTimeout(createFlyingImage, i * 400);
+
+        // === TRÁI TIM SAO – ICON THẬT: Sparkling Heart ===
+        const starContainer = document.getElementById('star-hearts-container');
+
+        function createHeartStar() {
+            const heart = document.createElement('div');
+            heart.className = 'star-heart';
+            heart.innerHTML = '&#10084'; // ICON THẬT
+
+            const x = Math.random() * innerWidth;
+            const y = Math.random() * innerHeight * 0.9;
+            const size = 10 + Math.random() * 16;
+            const delay = Math.random() * 4;
+            const twinkle = 2 + Math.random() * 2;
+            const float = 10 + Math.random() * 15;
+
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            heart.style.fontSize = size + 'px';
+            heart.style.animationDelay = delay + 's';
+            heart.style.animationDuration = `${twinkle}s, ${float}s, 2s`;
+
+            starContainer.appendChild(heart);
+            setTimeout(() => heart.remove(), 30000);
+        }
+
+        for (let i = 0; i < starCount; i++) {
+            setTimeout(createHeartStar, i * (isMobile ? 120 : 80));
+        }
+
+        setInterval(() => {
+            for (let i = 0; i < (isMobile ? 2 : 4); i++) createHeartStar();
+        }, 3500);
+
+        // === TRÁI TIM THEO CHUỘT – ICON THẬT: ❤️ → Broken Heart + ĐỔI MÀU ===
+        const minisize = 10, maxisize = 20, hearts = 80;
+        let x = 400, y = 300, swide = 800, shigh = 600, sleft = 0, sdown = 0;
+        const herz = [], herzx = [], herzy = [], herzs = [];
+
+        function createDiv() {
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.overflow = 'hidden';
+            div.style.backgroundColor = 'transparent';
+            div.style.animation = 'rainbow 2s linear infinite';
+            return div;
+        }
+
+        function initHearts() {
+            for (let i = 0; i < hearts; i++) {
+                const heart = createDiv();
+                heart.style.visibility = 'hidden';
+                heart.style.zIndex = '1001';
+                heart.style.pointerEvents = 'none';
+                heart.style.opacity = '0.45';
+                heart.innerHTML = '❤️'; // ICON THẬT – TRÁI TIM ĐỎ
+                document.body.appendChild(heart);
+                herz[i] = heart; herzy[i] = false;
+            }
+            updateSize(); follow();
+        }
+
+        function follow() {
+            if (Math.abs(x - (window.innerWidth/2)) > 50 || Math.abs(y - (window.innerHeight/2)) > 50) {
+                for (let i = 0; i < hearts; i++) if (herzy[i] === false) {
+                    herz[i].innerHTML = '❤️'; // ICON THẬT
+                    herz[i].style.left = (herzx[i] = x - minisize/2) + 'px';
+                    herz[i].style.top = (herzy[i] = y - minisize) + 'px';
+                    herz[i].style.fontSize = minisize + 'px';
+                    herz[i].style.visibility = 'visible';
+                    herzs[i] = minisize; break;
+                }
+            }
+            for (let i = 0; i < hearts; i++) if (herzy[i] !== false) moveHeart(i);
+            setTimeout(follow, 30);
+        }
+
+        function moveHeart(i) {
+            herzy[i] -= herzs[i]/minisize + i%2; herzx[i] += (i%5-2)/5;
+            if (herzy[i] < sdown - herzs[i] || herzx[i] < sleft - herzs[i] || herzx[i] > sleft + swide - herzs[i]) {
+                herz[i].style.visibility = 'hidden'; herzy[i] = false;
+            } else if (herzs[i] > minisize + 1 && Math.random() < 2.5/hearts) {
+                herz[i].innerHTML = '&#x1F494'; // ICON VỠ THẬT
+                herz[i].style.fontWeight = 'bold'; herzy[i] = false;
+            } else {
+                if (Math.random() < maxisize/herzy[i] && herzs[i] < maxisize) herz[i].style.fontSize = (++herzs[i]) + 'px';
+                herz[i].style.top = herzy[i] + 'px'; herz[i].style.left = herzx[i] + 'px';
+            }
+        }
+
+        const handleMove = e => {
+            const ev = e.touches ? e.touches[0] : e;
+            x = ev.pageX; y = ev.pageY;
+        };
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: true });
+
+        function updateSize() { swide = innerWidth; shigh = innerHeight; }
+        function updateScroll() { sdown = window.pageYOffset; sleft = window.pageXOffset; }
+        window.addEventListener('resize', updateSize);
+        window.addEventListener('scroll', updateScroll);
+
+        window.addEventListener('load', () => {
+            updateSize(); updateScroll(); initHearts();
+        });
+    </script>
+</body>
+</html>
