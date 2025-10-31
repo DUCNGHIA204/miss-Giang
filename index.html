@@ -390,9 +390,72 @@
         })(document.getElementById('pinkboard'));
 
         // === ẢNH BAY 3D ===
-        const flyingImages = ['./image/1.jpg', './image/2.jpg', './image/3.jpg', './image/4.jpg', './image/5.jpg', './image/6.jpg', './image/7.jpg', './image/8.jpg'];
-        const captions = ["Trái tim nhỏ xinh", "Ngôi sao lấp lánh", "Bông hoa tình yêu", "Cánh bướm bay", "Ký ức đẹp", "Tình yêu mãi", "Hạnh phúc", "Bên nhau"];
-        const flyingContainer = document.getElementById('flying-container');
+        const flyingImages = [
+            './image/1.jpg',
+            './image/2.jpg',
+            './image/3.jpg',
+            './image/4.jpg',
+            './image/5.jpg',
+            './image/6.jpg',
+            './image/7.jpg',
+            './image/8.jpg',
+            './image/9.jpg',
+            './image/10.jpg',
+            './image/11.jpg',
+            './image/12.jpg',
+            './image/13.jpg',
+            './image/14.jpg',
+            './image/15.jpg',
+            './image/16.jpg',
+            './image/17.jpg',
+            './image/18.jpg',
+            './image/19.jpg',
+            './image/20.jpg',
+            './image/21.jpg',
+            './image/22.jpg',
+            './image/23.jpg',
+            './image/24.jpg',
+            './image/25.jpg',
+            './image/26.jpg',
+            './image/27.jpg',
+            './image/28.jpg',
+            './image/29.jpg',
+            './image/30.jpg',
+        ];
+        const captions = [
+            "💼 Chúc cô Giang luôn cân bằng mọi tài khoản – cả trong công việc lẫn cuộc sống! ⚖️",
+            "😊 Mỗi ngày của cô Giang đều có lãi hạnh phúc và lợi nhuận nụ cười! 💖",
+            "🌸 Chúc cô Giang khấu hao hết mệt mỏi, ghi tăng niềm vui mỗi ngày! 🌞",
+            "💰 Mong cô Giang luôn có dòng tiền dương của hạnh phúc và sức khỏe! 💪",
+            "📊 Cô Giang ơi, bảng cân đối cuộc sống của cô lúc nào cũng phải thật đẹp nhé! 🌈",
+            "💗 Chúc cô Giang luôn dư vốn yêu thương và thiếu hụt nỗi buồn! 🍀",
+            "📘 Mỗi buổi sáng là một trang sổ mới – chúc cô Giang ghi toàn niềm vui vào đó! ✍️",
+            "🏆 Cô Giang là tài sản cố định không khấu hao trong lòng tụi em! 💎",
+            "🔍 Chúc cô Giang audit được nhiều niềm vui, phát hiện ít nỗi lo! 🤭",
+            "🌹 Cô Giang chính là chuẩn mực kế toán số 1 về tâm hồn và nụ cười! 😄",
+            "💃 Chúc cô Giang luôn xinh đẹp như bảng cân đối chuẩn từng dòng! 🪞",
+            "🏡 Chúc gia đình cô Giang luôn an khang, hạnh phúc và vui như ngày chốt sổ thành công! 🎉",
+            "📈 Mong cô Giang luôn có doanh thu hạnh phúc cao hơn chi phí mệt mỏi! ❤️",
+            "☕ Chúc cô Giang luôn có thêm nhiều 'dòng tiền tự do' để tận hưởng cuộc sống! 🌤️",
+            "🧾 Cô Giang ơi, chúc cô audit được niềm vui, xoá sổ nỗi buồn! 💫",
+            "💹 Chúc cô Giang luôn có tỷ suất sinh lời hạnh phúc cao nhất thế giới! 🌍",
+            "📅 Mỗi ngày đi làm là một kỳ kế toán mới – chúc cô Giang luôn có kết quả dương tuyệt đối! 💪",
+            "💖 Cô Giang là khoản đầu tư dài hạn mà ai cũng muốn giữ lại! 💝",
+            "🧮 Chúc cô Giang luôn ghi nhận doanh thu từ nụ cười và lợi nhuận từ tình yêu thương! 🌷",
+            "🏖️ Mong cô Giang có nhiều kỳ nghỉ để 'kiểm kê' lại niềm vui cùng gia đình! 👨‍👩‍👧‍👦",
+            "🌼 Chúc cô Giang luôn được hoàn nhập mọi áp lực, chỉ còn lại năng lượng tích cực! ✨",
+            "📗 Cuộc sống là sổ sách – chúc cô Giang lúc nào cũng cân chỉnh được mọi điều! ⚖️",
+            "🌟 Chúc cô Giang luôn có báo cáo tài chính cuộc đời thật rực rỡ! 💐",
+            "💎 Cô Giang là tài sản quý nhất của Phòng Tài chính – Kế toán, không thể trích khấu hao! 🏅",
+            "💧 Mong cô Giang lúc nào cũng có dòng vốn hạnh phúc chảy đều! 💕",
+            "🎀 Chúc cô Giang luôn có thêm cổ tức là niềm vui từ đồng nghiệp và học trò! 🙌",
+            "😄 Mỗi nụ cười của cô Giang là một khoản ghi tăng hạnh phúc cho mọi người! 🌸",
+            "👨‍👩‍👧 Chúc cô Giang luôn có nguồn vốn yêu thương dồi dào từ gia đình và bạn bè! 💞",
+            "💝 Cô Giang là khoản lợi nhuận tinh thần lớn nhất mà Phòng Kế toán có được! 🪙",
+            "🌺 Chúc cô Giang luôn 'chốt sổ' mỗi ngày bằng một nụ cười thật tươi! 😊"
+        ];
+
+        const flyingContainer = document.getElementById('flying-container');git
         let centerX = innerWidth / 2, centerY = innerHeight / 2;
         const orbitRadius = Math.min(innerWidth, innerHeight) * 0.35;
 
@@ -423,7 +486,7 @@
                 e.preventDefault();
 
                 if (!musicPlayed) {
-                    bgMusic.play().catch(() => {});
+                    bgMusic.play().catch(() => { });
                     musicPlayed = true;
                 }
 
